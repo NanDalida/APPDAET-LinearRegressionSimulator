@@ -51,6 +51,7 @@ Our project aims to provide a simple and accessible tool for learning regression
 
 The simulator focuses on implementing the calculations through basic Python programming concepts, including functions, loops, conditions, parameters, and returned values.
 
+---
 
 **Developed by Group 5**  
 Application Development (APPDAET) | Final Project
