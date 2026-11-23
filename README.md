@@ -2,7 +2,6 @@
 
 ### Group 5 | Application Development Final Project
 
----
 
 ## Project Overview
 
@@ -12,7 +11,6 @@ The **Least Squares Regression Simulator** is a Python-based application designe
 
 The simulator aims to make regression analysis easier by allowing users to upload CSV files, select numerical data, calculate regression equations, measure prediction errors, and visualize the relationship between variables.
 
----
 
 ## Key Features
 
@@ -24,7 +22,6 @@ The simulator aims to make regression analysis easier by allowing users to uploa
 - **Y-Value Prediction** – Predict values using the calculated regression equation.
 - **Data Visualization** – Display scatterplots and fitted regression lines or curves.
 
----
 
 ## Regression Models
 
@@ -38,7 +35,6 @@ The project covers five regression models:
 
 Each regression model uses its corresponding mathematical formula to analyze the relationship between X and Y values.
 
----
 
 ## Technologies Used
 
@@ -48,7 +44,6 @@ Each regression model uses its corresponding mathematical formula to analyze the
 - **Matplotlib** – Data visualization
 - **Tkinter** – Graphical user interface (planned)
 
----
 
 ## Project Objectives
 
@@ -56,7 +51,6 @@ Our project aims to provide a simple and accessible tool for learning regression
 
 The simulator focuses on implementing the calculations through basic Python programming concepts, including functions, loops, conditions, parameters, and returned values.
 
----
 
 **Developed by Group 5**  
 Application Development (APPDAET) | Final Project
