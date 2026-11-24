@@ -1,79 +1,77 @@
-from traceback import format_stack
+def determinant(matrix):
+    first_part = matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1])
+    second_part = matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0])
+    third_part = matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0])
+
+    return first_part - second_part + third_part
+
+
+def replace_column(matrix, column_number, new_values):
+    new_matrix = []
+
+    for row_number in range(3):
+        new_row = list(matrix[row_number])
+        new_row[column_number] = new_values[row_number]
+        new_matrix.append(new_row)
+
+    return new_matrix
 
 
 def fit_quadratic(x_values, y_values):
-    #Check if there is enough matching x and y values
     point_count = len(x_values)
-    if point_count !=len(y_values) or point_count <3:
-        return None, None, None, [], None, "YOu need at least 3 matching x and y values"
 
-    #initialize values
-    sum_x = 0.0
-    sum_xsquared = 0.0
-    sum_xcubed = 0.0
-    sum_xfourth = 0.0
-    sum_y = 0.0
-    sum_xy = 0.0
-    sum_xquaredysquared = 0.0
+    if point_count != len(y_values) or point_count < 3:
+        return None, None, None, [], None, "You need at least 3 matching x and y values"
 
-    #loop through each data point to collect sums for the three equations
-    for point_index in range(point_count):
-        x = x_values[point_index]
-        y = y_values[point_index]
-        x_squared =  x* x
+    if len(set(x_values)) < 3:
+        return None, None, None, [], None, "CANNOT solve quadratic equation for these inputs"
+
+    sum_x = 0
+    sum_x2 = 0
+    sum_x3 = 0
+    sum_x4 = 0
+    sum_y = 0
+    sum_xy = 0
+    sum_x2y = 0
+
+    for i in range(point_count):
+        x = x_values[i]
+        y = y_values[i]
         sum_x += x
-        sum_xsquared += x_squared
-        sum_xcubed += x_squared * x
-        sum_xfourth += x_squared * x_squared
+        sum_x2 += x * x
+        sum_x3 += x * x * x
+        sum_x4 += x * x * x * x
         sum_y += y
-        sum_xquaredysquared += x_squared * y
+        sum_xy += x * y
+        sum_x2y += x * x * y
 
-    #Three Equations for inputs
-    first_equation = [float(point_count), sum_x, sum_xsquared, sum_y]
-    second_equation = [sum_x, sum_xsquared, sum_xcubed, sum_xy]
-    third_equation = [sum_xsquared, sum_xcubed, sum_xfourth, sum_xquaredysquared]
+    main_matrix = [
+        [point_count, sum_x, sum_x2],
+        [sum_x, sum_x2, sum_x3],
+        [sum_x2, sum_x3, sum_x4]
+    ]
+    answers = [sum_y, sum_xy, sum_x2y]
 
-    #Remove a from 2nd and third equation(why) if the number of the first equation is 0 go to the next equation without 0
-    if first_equation[0] == 0:
-        if second_equation[0] != 0:
-            first_equation, second_equation = second_equation, first_equation
-        elif third_equation[0] != 0:
-            first_equation, third_equation = third_equation, first_equation
-        else:
-            return None, None, None, [], None, "CANNOT solve quadratic equation for these inputs"
+    main_determinant = determinant(main_matrix)
 
-    #cancel out A in second equation
-    factor_for_second = second_equation[0] / first_equation[0]
-    for term_position in range(4):
-        second_equation[term_position] -= factor_for_second * first_equation[term_position]
-
-    if second_equation[1] == 0:
+    if main_determinant == 0:
         return None, None, None, [], None, "CANNOT solve quadratic equation for these inputs"
 
-    #cancel out A in third equation
-    factor_for_third = third_equation[0] / first_equation[0]
-    for term_position in range(4):
-        third_equation[term_position] -= factor_for_third * first_equation[term_position]
-
-    if third_equation[2] == 0:
-        return None, None, None, [], None, "CANNOT solve quadratic equation for these inputs"
-
-    #Solve from c - b - a since its easier
-    c = third_equation[3] / third_equation[2]
-    b = (second_equation[3] - second_equation[2] * c) / second_equation[1]
-    a = (first_equation[3] - first_equation[1] * b - first_equation[2] * c) /first_equation[0]
+    a = determinant(replace_column(main_matrix, 0, answers)) / main_determinant
+    b = determinant(replace_column(main_matrix, 1, answers)) / main_determinant
+    c = determinant(replace_column(main_matrix, 2, answers)) / main_determinant
 
     residuals = []
-    squarederrorsum = 0.0
+    squared_error_total = 0
 
-    #Checks predicted y, resodial error, and sum of squared errors
-    for point_index in range(point_count):
-        x = x_values[point_index]
-        y = y_values[point_index]
-        predicted_y = a + (b * x) +  (c * x*x)
+    for i in range(point_count):
+        x = x_values[i]
+        y = y_values[i]
+        predicted_y = a + b * x + c * x * x
         residual = y - predicted_y
         residuals.append(residual)
-        squarederrorsum += residual * residual
+        squared_error_total += residual * residual
 
-    mse = squarederrorsum  / point_count
+    mse = squared_error_total / point_count
+
     return a, b, c, residuals, mse, None
