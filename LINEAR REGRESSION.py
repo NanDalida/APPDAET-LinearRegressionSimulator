@@ -1,133 +1,157 @@
-import tkinter as tk
-from tkinter import ttk, filedialog
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-root = tk.Tk()
-root.title("Linear Regression Simulator")
-root.geometry("900x600")
-
-top_bar = tk.Frame(root, bg="#64748B", height=30)
-top_bar.pack(fill="x")
-
-toolbar = tk.Frame(root, bg="#D1D5DB", height=45)
-toolbar.pack(fill="x")
+import math
 
 
-def browse_csv():
-    global df
+def mean(values):
+    return sum(values) / len(values)
 
-    file_path = filedialog.askopenfilename(
-        filetypes=[("CSV Files", "*.csv")]
-    )
 
-    if file_path:
-        df = pd.read_csv(file_path)
-        print(df.head())
+def check_data(x_values, y_values):
+    if len(x_values) != len(y_values):
+        raise ValueError("X and Y must have the same length")
 
-        columns = df.columns.tolist()
+    if len(x_values) < 2:
+        raise ValueError("At least 2 data pairs are required")
 
-        x_dropdown["values"] = columns
-        y_dropdown["values"] = columns
+    for i in range(len(x_values)):
+        x = x_values[i]
+        y = y_values[i]
 
-        x_dropdown.current(0)
-        y_dropdown.current(1)
-    
-import_button = tk.Button(
-    toolbar,
-    text="Import CSV",
-    command=browse_csv
-)
-import_button.pack(side="left", padx=5)
+        if not math.isfinite(x) or not math.isfinite(y):
+            raise ValueError("X and Y must be finite numbers")
 
-x_label = tk.Label(toolbar, text="X:", bg="#D1D5DB")
-x_label.pack(side="left", padx=5)
 
-x_dropdown = ttk.Combobox(toolbar, state="readonly")
-x_dropdown.pack(side="left", padx=5)
+def compute_slope(x_values, y_values, x_mean, y_mean):
+    xy_total = 0
+    x_total = 0
 
-y_label = tk.Label(toolbar, text="Y:", bg="#D1D5DB")
-y_label.pack(side="left", padx=5)
+    for i in range(len(x_values)):
+        x_diff = x_values[i] - x_mean
+        y_diff = y_values[i] - y_mean
+        xy_total += x_diff * y_diff
+        x_total += x_diff ** 2
 
-y_dropdown = ttk.Combobox(toolbar, state="readonly")
-y_dropdown.pack(side="left", padx=5)
+    if x_total == 0:
+        raise ValueError("All X values are the same")
 
-content_frame = tk.Frame(root, bg="#E5E7EB")
-content_frame.pack(fill="both", expand=True)
+    return xy_total / x_total
 
-left_panel = tk.Frame(content_frame, bg="#E5E7EB")
-left_panel.pack(side="left", fill="both", expand=True)
 
-graph_panel = tk.Frame(
-    content_frame,
-    bg="white",
-    highlightbackground="#D1D5DB",
-    highlightthickness=1
-)
-graph_panel.pack(side="right", fill="both", expand=True, padx=10, pady=5)
+def compute_intercept(x_mean, y_mean, slope):
+    return y_mean - slope * x_mean
 
-row1 = tk.Frame(left_panel, bg="#E5E7EB")
-row1.pack(side="top", anchor="w", pady=5)
 
-row2 = tk.Frame(left_panel, bg="#E5E7EB")
-row2.pack(side="top", anchor="w", pady=5)
+def compute_pearson_r(x_values, y_values, x_mean, y_mean):
+    xy_total = 0
+    x_total = 0
+    y_total = 0
 
-row3 = tk.Frame(left_panel, bg="#E5E7EB")
-row3.pack(side="top", anchor="w", pady=5)
+    for i in range(len(x_values)):
+        x_diff = x_values[i] - x_mean
+        y_diff = y_values[i] - y_mean
+        xy_total += x_diff * y_diff
+        x_total += x_diff ** 2
+        y_total += y_diff ** 2
 
-row4 = tk.Frame(left_panel, bg="#E5E7EB")
-row4.pack(side="top", anchor="w", pady=5)
+    bottom = math.sqrt(x_total * y_total)
 
-def calculate_equation():
-    pass
+    if bottom == 0:
+        return None
 
-calculate = tk.Button(
-    row1,
-    text="Calculate",
-    command=calculate_equation
-)
-calculate.pack(side="left", padx=5)
+    return xy_total / bottom
 
-Equation = ttk.Label(row2, text="Equation")
-Equation.pack(side="left", padx=5)
 
-equation = ttk.Entry(row2, state="readonly")
-equation.pack(side="left", padx=5)
+def predict_y(x, coefficient, slope):
+    return coefficient + slope * x
 
-Pearson = ttk.Label(row3, text="Pearson R")
-Pearson.pack(side="left", padx=5)
 
-pearson = ttk.Entry(row3, state="readonly")
-pearson.pack(side="left", padx=5)
+def compute_residuals(x_values, y_values, coefficient, slope):
+    residuals = []
 
-mse = ttk.Label(row4, text="MSE")
-mse.pack(side="left", padx=5)
+    for i in range(len(x_values)):
+        predicted_y = predict_y(x_values[i], coefficient, slope)
+        residuals.append(y_values[i] - predicted_y)
 
-mse1 = ttk.Entry(row4, state="readonly")
-mse1.pack(side="left", padx=5)
+    return residuals
 
-graph_title = tk.Label(
-    graph_panel,
-    text="Regression Graph",
-    font=("Arial", 16, "bold"),
-    bg="white",
-    fg="#1F2937"
-)
-graph_title.pack(anchor="w", padx=20, pady=15)
 
-fig, ax = plt.subplots(figsize=(7, 5))
+def compute_mse(residuals):
+    total = 0
 
-fig.patch.set_facecolor("white")
+    for residual in residuals:
+        total += residual ** 2
 
-ax.set_title("Linear Regression")
-ax.set_xlabel("X Values")
-ax.set_ylabel("Y Values")
-ax.grid(True)
+    return total / len(residuals)
 
-canvas = FigureCanvasTkAgg(fig, master=graph_panel)
-canvas.draw()
 
-canvas.get_tk_widget().pack(fill="both", expand=True)
+def run_linear_regression(x_values, y_values):
+    check_data(x_values, y_values)
 
-root.mainloop()
+    x_mean = mean(x_values)
+    y_mean = mean(y_values)
+
+    try:
+        slope = compute_slope(x_values, y_values, x_mean, y_mean)
+        coefficient = compute_intercept(x_mean, y_mean, slope)
+        pearson_r = compute_pearson_r(x_values, y_values, x_mean, y_mean)
+        residuals = compute_residuals(x_values, y_values, coefficient, slope)
+        mse = compute_mse(residuals)
+    except OverflowError:
+        raise ValueError("Calculated values are too big")
+
+    for value in [coefficient, slope, mse]:
+        if not math.isfinite(value):
+            raise ValueError("Calculated values are too big")
+
+    return {
+        "coefficient": coefficient,
+        "slope": slope,
+        "pearson_r": pearson_r,
+        "residuals": residuals,
+        "mse": mse
+    }
+
+
+def check_number(test_name, expected, actual):
+    if abs(expected - actual) < 0.000001:
+        print("PASS:", test_name)
+    else:
+        print("FAIL:", test_name, "- expected", expected, "but got", actual)
+
+
+def check_error(test_name, x_values, y_values):
+    try:
+        run_linear_regression(x_values, y_values)
+        print("FAIL:", test_name, "- no error was raised")
+    except ValueError as error:
+        print("PASS:", test_name, "-", error)
+
+
+if __name__ == "__main__":
+    result = run_linear_regression([1, 2, 3, 4, 5], [2, 4, 5, 4, 5])
+    check_number("Normal 1 slope", 0.6, result["slope"])
+    check_number("Normal 1 intercept", 2.2, result["coefficient"])
+    check_number("Normal 1 pearson r", math.sqrt(0.6), result["pearson_r"])
+    check_number("Normal 1 mse", 0.48, result["mse"])
+
+    result = run_linear_regression([1, 2, 3, 4], [8, 6, 4, 2])
+    check_number("Normal 2 slope", -2, result["slope"])
+    check_number("Normal 2 pearson r", -1, result["pearson_r"])
+
+    result = run_linear_regression([1, 2, 3], [2, 4, 2])
+    check_number("Normal 3 slope", 0, result["slope"])
+    check_number("Normal 3 pearson r", 0, result["pearson_r"])
+
+    result = run_linear_regression([1, 3], [1, 5])
+    check_number("Boundary 2 points slope", 2, result["slope"])
+    check_number("Boundary 2 points intercept", -1, result["coefficient"])
+
+    result = run_linear_regression([1, 2, 3], [4, 4, 4])
+    if result["pearson_r"] is None:
+        print("PASS: Boundary all Y the same, pearson r is None")
+    else:
+        print("FAIL: Boundary all Y the same, pearson r should be None")
+
+    check_error("Invalid all X the same", [2, 2, 2], [1, 2, 3])
+    check_error("Invalid only 1 pair", [1], [1])
+    check_error("Invalid different lengths", [1, 2, 3], [1, 2])
+    check_error("Invalid NaN value", [1, 2, float("nan")], [1, 2, 3])
