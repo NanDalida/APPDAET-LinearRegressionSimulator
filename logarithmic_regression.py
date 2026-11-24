@@ -1,55 +1,81 @@
 import math
 
+
 def mean(values):
     return sum(values) / len(values)
 
-def compute_slope(log_xs, ys, x_mean, y_mean):
-    numerator = 0
-    denominator = 0
 
-    for i in range(len(log_xs)):
-        x_diff = log_xs[i] - x_mean
-        y_diff = ys[i] - y_mean
-        numerator += x_diff * y_diff
-        denominator += x_diff ** 2
+def check_data(x_values, y_values):
+    if len(x_values) != len(y_values):
+        raise ValueError("X and Y must have the same length")
 
-    if denominator == 0:
+    if len(x_values) < 2:
+        raise ValueError("At least 2 data pairs are required")
+
+    for i in range(len(x_values)):
+        x = x_values[i]
+        y = y_values[i]
+
+        if not math.isfinite(x) or not math.isfinite(y):
+            raise ValueError("X and Y must be finite numbers")
+
+        if x <= 0:
+            raise ValueError("X values must be greater than zero")
+
+
+def compute_slope(log_x_values, y_values, log_x_mean, y_mean):
+    xy_total = 0
+    x_total = 0
+
+    for i in range(len(log_x_values)):
+        x_diff = log_x_values[i] - log_x_mean
+        y_diff = y_values[i] - y_mean
+        xy_total += x_diff * y_diff
+        x_total += x_diff ** 2
+
+    if x_total == 0:
         raise ValueError("All X values are the same")
 
-    return numerator / denominator
+    return xy_total / x_total
 
-def compute_coefficient(x_mean, y_mean, slope):
-    return y_mean - slope * x_mean
 
-def compute_pearson_r(log_xs, ys, x_mean, y_mean):
-    numerator = 0
+def compute_coefficient(log_x_mean, y_mean, slope):
+    return y_mean - slope * log_x_mean
+
+
+def compute_pearson_r(log_x_values, y_values, log_x_mean, y_mean):
+    xy_total = 0
     x_total = 0
     y_total = 0
 
-    for i in range(len(log_xs)):
-        x_diff = log_xs[i] - x_mean
-        y_diff = ys[i] - y_mean
-        numerator += x_diff * y_diff
+    for i in range(len(log_x_values)):
+        x_diff = log_x_values[i] - log_x_mean
+        y_diff = y_values[i] - y_mean
+        xy_total += x_diff * y_diff
         x_total += x_diff ** 2
         y_total += y_diff ** 2
 
-    denominator = math.sqrt(x_total * y_total)
-    if denominator == 0:
+    bottom = math.sqrt(x_total * y_total)
+
+    if bottom == 0:
         return None
 
-    return numerator / denominator
+    return xy_total / bottom
+
 
 def predict_y(x, coefficient, slope):
     return coefficient + slope * math.log(x)
 
-def compute_residuals(xs, ys, coefficient, slope):
+
+def compute_residuals(x_values, y_values, coefficient, slope):
     residuals = []
 
-    for i in range(len(xs)):
-        predicted = predict_y(xs[i], coefficient, slope)
-        residuals.append(ys[i] - predicted)
+    for i in range(len(x_values)):
+        predicted_y = predict_y(x_values[i], coefficient, slope)
+        residuals.append(y_values[i] - predicted_y)
 
     return residuals
+
 
 def compute_mse(residuals):
     total = 0
@@ -59,39 +85,29 @@ def compute_mse(residuals):
 
     return total / len(residuals)
 
-def run_logarithmic_regression(xs, ys):
-    if len(xs) != len(ys):
-        raise ValueError("X and Y must have the same length")
 
-    if len(xs) < 2:
-        raise ValueError("At least 2 data pairs are required")
+def run_logarithmic_regression(x_values, y_values):
+    check_data(x_values, y_values)
 
-    log_xs = []
+    log_x_values = []
+    for x in x_values:
+        log_x_values.append(math.log(x))
 
-    for i in range(len(xs)):
-        if not math.isfinite(xs[i]) or not math.isfinite(ys[i]):
-            raise ValueError("X and Y must be finite numbers")
-
-        if xs[i] <= 0:
-            raise ValueError("X values must be greater than zero")
-
-        log_xs.append(math.log(xs[i]))
-
-    x_mean = mean(log_xs)
-    y_mean = mean(ys)
-    slope = compute_slope(log_xs, ys, x_mean, y_mean)
+    log_x_mean = mean(log_x_values)
+    y_mean = mean(y_values)
 
     try:
-        coefficient = compute_coefficient(x_mean, y_mean, slope)
-        pearson_r = compute_pearson_r(log_xs, ys, x_mean, y_mean)
-        residuals = compute_residuals(xs, ys, coefficient, slope)
+        slope = compute_slope(log_x_values, y_values, log_x_mean, y_mean)
+        coefficient = compute_coefficient(log_x_mean, y_mean, slope)
+        pearson_r = compute_pearson_r(log_x_values, y_values, log_x_mean, y_mean)
+        residuals = compute_residuals(x_values, y_values, coefficient, slope)
         mse = compute_mse(residuals)
-
     except OverflowError:
         raise ValueError("Calculated values are too big")
 
-    if not math.isfinite(coefficient) or not math.isfinite(slope) or not math.isfinite(mse):
-        raise ValueError("Calculated values are too big")
+    for value in [coefficient, slope, mse]:
+        if not math.isfinite(value):
+            raise ValueError("Calculated values are too big")
 
     return {
         "coefficient": coefficient,
