@@ -14,7 +14,7 @@ from regression import (
     run_linear_regression,
     run_exponential_regression,
     run_logarithmic_regression,
-    fit_quadratic,
+    fit_quadratic_regression,
     predict_linear_y,
     predict_exponential_y,
     predict_logarithmic_y,
@@ -116,7 +116,7 @@ def calculate_linear(xs, ys):
 
 
 def calculate_quadratic(xs, ys):
-    a, b, c, residuals, mse_value, error = fit_quadratic(xs, ys)
+    a, b, c, residuals, mse_value, error = fit_quadratic_regression(xs, ys)
 
     # fit_quadratic returns the error instead of raising it, so raise it here
     if error is not None:
